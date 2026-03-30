@@ -1,0 +1,94 @@
+{% extends 'auctions/base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10 fade-in">
+    <div class="mb-12 text-center">
+        <h1 class="text-4xl font-black text-slate-900 uppercase tracking-tight leading-none">Регистрация актива</h1>
+        <p class="text-slate-500 font-bold mt-3 uppercase text-xs tracking-widest">Внесение нового объекта в реестр электронных торгов</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200 border border-slate-100 p-10 md:p-16 space-y-10">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="p-6 bg-red-50 text-red-700 rounded-2xl border border-red-100 text-sm font-bold">
+                <p class="uppercase text-xs tracking-widest font-black mb-2">Ошибка заполнения:</p>
+                {{ form.errors }}
+            </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="md:col-span-2 space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Наименование имущества</label>
+                {{ form.title }}
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Категория реестра</label>
+                {{ form.category }}
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Стартовая цена (₽)</label>
+                <div class="relative flex items-center">
+                    {{ form.current_price }}
+                    <span class="absolute right-5 font-bold text-slate-300 pointer-events-none text-lg">₽</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Технические характеристики</label>
+            {{ form.description }}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Дата окончания торгов</label>
+                {{ form.end_date }}
+            </div>
+            
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Официальное фото</label>
+                <div class="relative bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl px-4 py-2 hover:border-blue-500 transition-colors">
+                    {{ form.image }}
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-10 border-t border-slate-100">
+            <button type="submit" class="w-full bg-[#0056CF] text-white py-6 rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-[0.99] active:translate-y-px">
+                Зарегистрировать лот в реестре
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    /* Прямое управление полями из твоего forms.py */
+    input, textarea, select {
+        width: 100% !important;
+        background-color: #F8FAFC !important; /* slate-50 */
+        border: 2px solid #F1F5F9 !important; /* slate-100 */
+        border-radius: 1rem !important;
+        font-weight: 600 !important;
+        color: #1E293B !important;
+        transition: all 0.2s ease !important;
+        outline: none !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: #0056CF !important;
+        background-color: white !important;
+        box-shadow: 0 0 0 4px rgba(0, 86, 207, 0.05) !important;
+    }
+
+    /* Исправление для типа number, чтобы не перекрывать символ рубля */
+    input[type="number"] {
+        padding-right: 3rem !important;
+    }
+
+    .fade-in { animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}

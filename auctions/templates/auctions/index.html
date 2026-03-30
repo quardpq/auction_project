@@ -1,0 +1,159 @@
+{% extends 'auctions/base.html' %}
+
+{% block content %}
+<style>
+    /* Анимация плавного появления */
+    @keyframes cardAppear {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .lot-card {
+        animation: cardAppear 0.4s ease forwards;
+        background: white;
+        border: 1px solid #E2E8F0;
+        transition: all 0.3s ease;
+    }
+
+    .lot-card:hover {
+        border-color: var(--brand-blue, #0056CF);
+        box-shadow: 0 12px 30px rgba(0, 86, 207, 0.08);
+        transform: translateY(-4px);
+    }
+</style>
+
+<div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+    <div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Поиск <span class="text-[#0056CF]">имущества</span>
+        </h1>
+        <p class="text-sm font-semibold text-slate-400 uppercase tracking-widest mt-2">Единый реестр активных процедур</p>
+    </div>
+    <div class="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm">
+        <span class="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Всего объектов</span>
+        <span class="text-2xl font-black text-slate-900 leading-none">{{ lots|length }}</span>
+    </div>
+</div>
+
+<section class="mb-12">
+    <form method="GET" action="{% url 'index' %}" class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-2">
+        <div class="flex-grow">
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}" 
+                   class="w-full px-6 py-3.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-[#0056CF] focus:ring-0 font-medium text-slate-700 transition-all outline-none"
+                   placeholder="Наименование, код лота или ИНН...">
+        </div>
+        
+        <div class="md:w-60">
+            <select name="category" class="w-full h-full px-4 py-3.5 rounded-xl bg-slate-50 border-transparent font-bold uppercase text-[10px] tracking-wider outline-none cursor-pointer hover:bg-slate-100 transition-all">
+                <option value="">Все категории</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"i" %}selected{% endif %}>
+                        {{ cat.name|upper }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="bg-[#0056CF] text-white px-8 py-3.5 rounded-xl font-bold uppercase tracking-wider text-[11px] hover:bg-blue-700 transition-all shadow-md shadow-blue-200">
+            Найти объекты
+        </button>
+    </form>
+</section>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for lot in lots %}
+    <div class="lot-card rounded-2xl flex flex-col overflow-hidden" style="animation-delay: {{ forloop.counter0 }}0ms">
+        
+        <div class="px-5 py-3 flex justify-between items-center border-b border-slate-50">
+            <span class="font-mono text-[10px] font-bold text-slate-400">LOT_{{ lot.id|stringformat:"05d" }}</span>
+            <div class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full {% if lot.is_expired %}bg-slate-300{% else %}bg-emerald-500 animate-pulse{% endif %}"></span>
+                <span class="text-[9px] uppercase font-extrabold tracking-widest {% if lot.is_expired %}text-slate-400{% else %}text-emerald-600{% endif %}">
+                    {% if lot.is_expired %}Прием закрыт{% else %}Прием заявок{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="relative h-52 mx-2 mt-2 rounded-xl overflow-hidden bg-slate-100">
+            {% if lot.image %}
+                <img src="{{ lot.image.url }}" alt="{{ lot.title }}" class="w-full h-full object-cover">
+            {% else %}
+                <div class="w-full h-full flex items-center justify-center text-slate-300">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+            {% endif %}
+            <div class="absolute top-3 left-3">
+                <span class="bg-white/95 backdrop-blur px-2.5 py-1 rounded shadow-sm text-[9px] font-bold uppercase tracking-wider text-slate-600 border border-slate-100">
+                    {{ lot.category.name }}
+                </span>
+            </div>
+        </div>
+
+        <div class="p-5 flex-grow flex flex-col">
+            <h3 class="text-base font-bold text-slate-900 leading-snug mb-2 line-clamp-2 h-10">
+                {{ lot.title }}
+            </h3>
+            
+            <div class="mb-5">
+                <div class="flex justify-between items-end mb-1.5">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">Начальная цена</span>
+                    <span class="text-xl font-black text-slate-900 leading-none">{{ lot.current_price }} <span class="text-xs font-bold text-slate-300">₽</span></span>
+                </div>
+                <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="bg-[#0056CF] h-full w-2/3 opacity-30"></div>
+                </div>
+            </div>
+
+            <div class="mt-auto border-t border-slate-50 pt-4 flex items-center justify-between">
+                <div>
+                    <span class="text-[9px] text-slate-400 block mb-1 uppercase font-bold tracking-tight">До завершения</span>
+                    <span class="js-timer font-mono text-[11px] font-bold text-[#0056CF]" data-endtime="{{ lot.end_date|date:'c' }}">
+                        00:00:00
+                    </span>
+                </div>
+                <a href="{% url 'lot_detail' lot.id %}" 
+                   class="px-5 py-2.5 rounded-lg font-bold uppercase tracking-wider text-[10px] transition-all
+                   {% if lot.is_expired %}
+                        bg-slate-100 text-slate-400 cursor-not-allowed
+                   {% else %}
+                        bg-slate-900 text-white hover:bg-[#0056CF] shadow-sm
+                   {% endif %}">
+                    {% if lot.is_expired %}Архив{% else %}Подробнее{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full py-20 text-center rounded-3xl border-2 border-dashed border-slate-200 bg-white">
+        <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Объекты не найдены в выбранной категории</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function updateAllTimers() {
+    document.querySelectorAll('.js-timer').forEach(timer => {
+        const endTimeStr = timer.getAttribute('data-endtime');
+        if (!endTimeStr) return;
+
+        const targetDate = new Date(endTimeStr).getTime();
+        const now = new Date().getTime();
+        const distance = targetDate - now;
+
+        if (distance < 0) {
+            timer.innerHTML = "ТОРГИ ЗАВЕРШЕНЫ";
+            timer.classList.replace('text-[#0056CF]', 'text-slate-300');
+            return;
+        }
+
+        const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + (Math.floor(distance / (1000 * 60 * 60 * 24)) * 24);
+        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+        timer.innerHTML = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    });
+}
+setInterval(updateAllTimers, 1000);
+updateAllTimers();
+</script>
+{% endblock %}

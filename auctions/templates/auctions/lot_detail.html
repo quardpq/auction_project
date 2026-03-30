@@ -1,0 +1,219 @@
+{% extends 'auctions/base.html' %}
+{% load humanize %} {# Обязательно для работы разделения разрядов в ценах #}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 fade-in">
+    <nav class="flex items-center justify-between mb-8">
+        <div class="flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <a href="{% url 'index' %}" class="hover:text-blue-600 transition-colors">Реестр торгов</a>
+            <span class="mx-3 opacity-30">/</span>
+            <span class="text-slate-900">{{ lot.category.name|default:"Общая категория" }}</span>
+        </div>
+        <a href="{% url 'index' %}" class="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:opacity-70 flex items-center gap-2">
+            <span>←</span> Вернуться назад
+        </a>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        
+        <div class="lg:col-span-7 space-y-10">
+            <div class="group relative bg-white rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100 aspect-[16/10]">
+                {% if lot.image %}
+                    <img src="{{ lot.image.url }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="{{ lot.title }}">
+                {% else %}
+                    <div class="w-full h-full bg-slate-50 flex flex-col items-center justify-center space-y-4">
+                        <svg class="w-16 h-16 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Изображение отсутствует</span>
+                    </div>
+                {% endif %}
+                
+                <div class="absolute top-8 left-8">
+                    {% if lot.is_expired %}
+                        <span class="bg-black text-white text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Торги закрыты</span>
+                    {% else %}
+                        <div class="bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-blue-500/40">
+                            <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> Идут торги
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="px-2 space-y-6">
+                <div class="space-y-2">
+                    <span class="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Лот №{{ lot.id|stringformat:"05d" }}</span>
+                    <h1 class="text-4xl lg:text-5xl font-black text-slate-900 leading-[0.95] tracking-tighter uppercase">{{ lot.title }}</h1>
+                </div>
+                
+                <div class="pt-10 border-t border-slate-100">
+                    <h3 class="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em] mb-6">Официальное описание</h3>
+                    <div class="text-slate-500 font-medium leading-relaxed text-lg max-w-2xl">
+                        {{ lot.description|linebreaks|default:"Техническое описание объекта проходит финальную верификацию в реестре." }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-8">
+            
+            <div class="bg-white rounded-[3rem] p-10 shadow-2xl shadow-slate-200 border border-slate-100 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-slate-50 rounded-full blur-3xl opacity-50"></div>
+
+                <div class="relative space-y-10">
+                    <div class="flex flex-wrap justify-between items-start gap-4">
+                        <div>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Текущая цена</span>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-3xl font-black text-slate-900 tracking-tighter">{{ lot.current_price|intcomma }}</span>
+                                <span class="text-lg font-bold text-slate-400">₽</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">До конца</span>
+                            <div id="timer" data-endtime="{{ lot.end_date|date:'c' }}" class="text-xl font-black text-slate-900 tracking-tight tabular-nums">
+                                {% if lot.is_expired %}Завершено{% else %}--:--:--{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not lot.is_expired %}
+                        {% if user.is_authenticated %}
+                        <form id="bidForm" action="{% url 'place_bid' lot.id %}" method="post" class="space-y-4">
+                            {% csrf_token %}
+                            <div class="group relative">
+                                <label class="absolute -top-2.5 left-6 bg-white px-2 text-[9px] font-black text-blue-600 uppercase tracking-widest z-10">Ваша ставка</label>
+                                <input type="number" name="bid_amount" step="1" min="{{ lot.current_price|add:1 }}" required
+                                       placeholder="Сумма"
+                                       class="w-full px-8 py-6 bg-slate-50 border-2 border-slate-50 rounded-[2rem] focus:bg-white focus:border-blue-600 outline-none text-2xl font-black transition-all">
+                                <span class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-300 font-black">₽</span>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-6 rounded-[2rem] shadow-xl shadow-blue-200 transition-all uppercase text-xs tracking-[0.2em] active:scale-[0.98]">
+                                Подтвердить ставку
+                            </button>
+                        </form>
+                        {% else %}
+                        <div class="p-8 bg-slate-50 rounded-[2.5rem] text-center border border-dashed border-slate-200">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Требуется авторизация</p>
+                            <a href="{% url 'login' %}" class="inline-block bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all">Войти в кабинет</a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="p-8 bg-slate-900 rounded-[2.5rem] text-center relative overflow-hidden">
+                            {% if lot.winner %}
+                                <div class="relative z-10">
+                                    <span class="text-3xl block mb-2">🏆</span>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Победитель</p>
+                                    <p class="text-xl font-black text-white uppercase tracking-tight mb-1">{{ lot.winner.username }}</p>
+                                    <p class="text-blue-400 font-bold text-sm">{{ lot.current_price|intcomma }} ₽</p>
+                                </div>
+                                {% if lot.winner == user %}
+                                <div class="absolute inset-0 bg-blue-600 flex items-center justify-center p-4">
+                                    <p class="text-white font-black uppercase tracking-widest text-[10px] animate-pulse">Вы выиграли этот лот!</p>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-slate-500 font-black uppercase text-[10px] tracking-widest">Торги не состоялись</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-[10px] font-black text-slate-900 uppercase tracking-widest">История торгов</h3>
+                    <span class="bg-slate-50 px-3 py-1 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ lot.bids.count }} стат.</span>
+                </div>
+                
+                <div class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {% for bid in lot.bids.all|dictsortreversed:"timestamp"|slice:":8" %}
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-100 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-[10px] font-black text-blue-600 shadow-sm">
+                                {{ bid.user.username|slice:":1"|upper }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-black text-slate-900 leading-none mb-1 truncate">{{ bid.user.username }}</p>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ bid.timestamp|date:"H:i:s" }}</p>
+                            </div>
+                        </div>
+                        <p class="font-black text-slate-900 text-xs whitespace-nowrap ml-2">{{ bid.amount|intcomma }} ₽</p>
+                    </div>
+                    {% empty %}
+                    <div class="py-10 text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] border-2 border-dashed border-slate-50 rounded-3xl">
+                        Предложений пока нет
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateTimer() {
+        const timerElement = document.getElementById('timer');
+        if (!timerElement) return;
+
+        const endTimeStr = timerElement.getAttribute('data-endtime');
+        if (!endTimeStr || timerElement.innerText.trim() === "Завершено") return;
+
+        const targetDate = new Date(endTimeStr).getTime();
+        const now = new Date().getTime();
+        const distance = targetDate - now;
+
+        if (isNaN(distance) || distance < 0) {
+            timerElement.innerHTML = "Завершено";
+            timerElement.classList.add('text-red-600');
+            setTimeout(() => { location.reload(); }, 3000);
+            return;
+        }
+
+        const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+        timerElement.innerHTML = d > 0 
+            ? `${d}д ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+            : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    setInterval(updateTimer, 1000);
+    updateTimer();
+
+    const bidForm = document.getElementById('bidForm');
+    if (bidForm) {
+        bidForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); 
+                } else {
+                    alert('Внимание: ' + (data.error || 'Проверьте сумму ставки. Она должна быть выше текущей цены.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Сетевая ошибка. Попробуйте обновить страницу.');
+            });
+        });
+    }
+</script>
+
+<style>
+    .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+</style>
+{% endblock %}

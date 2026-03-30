@@ -1,0 +1,51 @@
+{% extends 'auctions/base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-10">
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">МОИ СТАВКИ</h1>
+        <p class="text-slate-500 font-medium uppercase text-[10px] tracking-[0.2em] mt-1">История вашего участия в торгах</p>
+    </div>
+
+    <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-900 text-white">
+                    <th class="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Объект</th>
+                    <th class="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Ваша ставка</th>
+                    <th class="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-right">Статус</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for bid in user_bids %}
+                <tr class="hover:bg-slate-50 transition-colors cursor-pointer" onclick="window.location='{% url 'lot_detail' bid.lot.id %}'">
+                    <td class="px-8 py-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                                {% if bid.lot.image %}<img src="{{ bid.lot.image.url }}" class="w-full h-full object-cover">{% endif %}
+                            </div>
+                            <span class="font-bold text-slate-900 text-sm">{{ bid.lot.title }}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <span class="text-sm font-black text-slate-900">{{ bid.amount }} ₽</span>
+                        <span class="block text-[9px] text-slate-400 font-bold">{{ bid.timestamp|date:"d.m.Y H:i" }}</span>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        {% if bid.amount == bid.lot.current_price %}
+                            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Лидирует</span>
+                        {% else %}
+                            <span class="bg-slate-100 text-slate-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Перебита</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="px-8 py-20 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">Вы еще не делали ставок</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
