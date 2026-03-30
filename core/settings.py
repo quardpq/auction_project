@@ -2,9 +2,14 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 SECRET_KEY = 'django-insecure-your-key-here'
+
+# На сервере лучше держать False, но для первого запуска оставим True
 DEBUG = True
-ALLOWED_HOSTS = []
+
+# Разрешаем Render запускать ваш сайт
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -13,12 +18,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'auctions', # Твоё приложение
+    'auctions', 
     'django.contrib.humanize'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise помогает Django отдавать статические файлы на Render
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -32,8 +39,8 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], # Здесь можно оставить пусто, если шаблоны внутри папок приложений
-        'APP_DIRS': True, # Это должно быть True
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -54,28 +61,28 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = [] # Для тестов отключим сложность
+AUTH_PASSWORD_VALIDATORS = []
+
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = 'static/'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# КРИТИЧЕСКИ ВАЖНАЯ СТРОКА ДЛЯ ТВОЕЙ ОШИБКИ:
+# Модель пользователя
 AUTH_USER_MODEL = 'auctions.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
-import os
 
-# Путь в файловой системе, где будут храниться файлы
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# Настройки для статики и медиа
+# --- НАСТРОЙКИ СТАТИКИ (ИСПРАВЛЕНО) ---
 STATIC_URL = '/static/'
+# Папка, где Django ищет общую статику
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+# Папка, куда Render соберет файлы (решает твою ошибку)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Настройки медиа
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-ALLOWED_HOSTS = ['*'] # Для теста можно оставить звездочку, потом заменим на ваш адрес .onrender.com
