@@ -2,11 +2,12 @@ import os
 from pathlib import Path
 import dj_database_url
 
+# Определение базовой папки проекта
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-your-key-here'
 
-# На сервере лучше держать False, но для первого запуска оставим True
+# На сервере лучше держать False, но для отладки оставим True
 DEBUG = True
 
 # Разрешаем Render запускать ваш сайт
@@ -55,20 +56,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-import dj_database_url
-
-# Это оставит SQLite для твоего компьютера
+# --- НАСТРОЙКА БАЗЫ ДАННЫХ (ИСПРАВЛЕНО) ---
+# По умолчанию используем SQLite (для твоего компьютера)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
-# А это подставит Postgres на Render
+# Если на Render задана переменная DATABASE_URL, переключаемся на Postgres
 db_from_env = dj_database_url.config(conn_max_age=600)
 if db_from_env:
-    DATABASES['default'].update(db_from_env)
+    DATABASES['default'] = db_from_env
 
 AUTH_PASSWORD_VALIDATORS = []
 
@@ -85,12 +85,12 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
 
-# --- НАСТРОЙКИ СТАТИКИ (ИСПРАВЛЕНО) ---
+# --- НАСТРОЙКИ СТАТИКИ ---
 STATIC_URL = '/static/'
-# Папка, где Django ищет общую статику
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-# Папка, куда Render соберет файлы (решает твою ошибку)
+# Папка, куда Render соберет файлы
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Дополнительные места поиска статики
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Настройки медиа
 MEDIA_URL = '/media/'
